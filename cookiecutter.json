@@ -1,5 +1,6 @@
 {
   "repo_owner": "conductorone",
-  "repo_name": "baton-example",
-  "name": "baton-example"
+  "repo_name": "baton-metabase",
+  "name": "baton-metabase"
+  "config_name": "example"
 }
