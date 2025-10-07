@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REPO_SETUP_TOKEN: ${{ secrets.REPO_SETUP_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.REPO_SETUP_TOKEN }}
     steps:
       - name: Do not run scaffolding on template repository
         shell: bash
@@ -88,7 +89,7 @@ jobs:
           ! -name '.git' \
           ! -name 'cookiecutter-temp' \
           ! -name '.' \
-          ! -exec rm -rf {} +
+          ! -exec rm -rf {}
 
       - name: Move files to root
         shell: bash
