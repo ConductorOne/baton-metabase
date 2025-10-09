@@ -7,18 +7,18 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24.x
+          go-version: 1.25.x
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Run linters
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           args: --timeout=3m
   go-test:
     strategy:
       matrix:
-        go-version: [1.24.x]
+        go-version: [1.25.x]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -37,42 +37,35 @@ jobs:
         with:
           test-results: test.json
 
-  test:
-    runs-on: ubuntu-latest
-    # Define any services needed for the test suite (or delete this section)
-    # services:
-    #   postgres:
-    #     image: postgres:16
-    #     ports:
-    #       - "5432:5432"
-    #     env:
-    #       POSTGRES_PASSWORD: secretpassword
-    env:
-      BATON_LOG_LEVEL: debug
-      # Add any environment variables needed to run baton-metabase
-      # BATON_BASE_URL: 'http://localhost:8080'
-      # BATON_ACCESS_TOKEN: 'secret_token'
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24.x
-      - name: Checkout code
-        uses: actions/checkout@v4
-      # Install any dependencies here (or delete this)
-      # - name: Install postgres client
-      #   run: sudo apt install postgresql-client
-      # Run any fixture setup here (or delete this)
-      # - name: Import sql into postgres
-      #   run: psql -h localhost --user postgres -f environment.sql
-      #   env:
-      #     PGPASSWORD: secretpassword
-      - name: Build baton-metabase
-        run: go build ./cmd/baton-metabase
-      - name: Test syncing
-        uses: ConductorOne/github-workflows/actions/sync-test@v2
-        with:
-          connector: ./baton-metabase
-          baton-entitlement: 'entitlement:group:1234:member'
-          baton-principal: 'user:9876'
-          baton-principal-type: 'user'
+#  ** TODO Attempt to run both versions locally using curl and documentation endpoints to obtain an API key that allows the connector to synchronize and run the test automatically.
+#  test:
+#    runs-on: ubuntu-latest
+#    env:
+#      BATON_LOG_LEVEL: debug
+#      # Add any environment variables needed to run baton-metabase
+#      # BATON_BASE_URL: 'http://localhost:8080'
+#      # BATON_ACCESS_TOKEN: 'secret_token'
+#    steps:
+#      - name: Install Go
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: 1.25.x
+#      - name: Checkout code
+#        uses: actions/checkout@v5
+#      # Install any dependencies here (or delete this)
+#      # - name: Install postgres client
+#      #   run: sudo apt install postgresql-client
+#      # Run any fixture setup here (or delete this)
+#      # - name: Import sql into postgres
+#      #   run: psql -h localhost --user postgres -f environment.sql
+#      #   env:
+#      #     PGPASSWORD: secretpassword
+#      - name: Build baton-metabase
+#        run: go build ./cmd/baton-metabase
+#      - name: Test syncing
+#        uses: ConductorOne/github-workflows/actions/sync-test@v2
+#        with:
+#          connector: ./baton-metabase
+#          baton-entitlement: 'entitlement:group:1234:member'
+#          baton-principal: 'user:9876'
+#          baton-principal-type: 'user'
