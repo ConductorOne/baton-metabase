@@ -9,7 +9,7 @@ var (
 		"metabase-base-url",
 		field.WithRequired(true),
 		field.WithIsSecret(false),
-		field.WithDescription("Metabase Base URL e.g. https://instance.fs.ocs.oraclecloud.com"),
+		field.WithDescription("Metabase Base URL e.g. https://metabase.example.com"),
 		field.WithDisplayName("Base URL"),
 	)
 

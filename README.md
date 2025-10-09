@@ -27,11 +27,13 @@ This connector requires the open source version Metabase v0.49.x or v0.56.x to b
   --name metabase \
   metabase/metabase:v0.56.0-beta
   ```
-This command starts Metabase and exposes it on port 3000 of the server.
+The previous commands starts Metabase and exposes it on port 3000 of the server.
 The connector requires the --metabase-base-url parameter, which should be set to the URL where this Metabase instance is accessible (e.g., https://metabase.customer.com for production).
 For example:
 If Metabase is running on a server with domain metabase.customer.com and port 443 (HTTPS), the base URL would be:
 * --metabase-base-url https://metabase.customer.com
+  For the previous case of docker commands, the base URL would be:
+* --metabase-base-url http://localhost:3000
 
 ## Connector credentials
 1. What credentials or information are needed to set up the connector? (For example, API key, client ID and secret, domain, etc.)
