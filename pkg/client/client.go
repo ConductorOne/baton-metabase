@@ -57,7 +57,11 @@ func New(ctx context.Context, baseURL string, apiKey string) (*MetabaseClient, e
 	}, nil
 }
 
-func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.URL, target interface{}, body interface{}) (*http.Header, *v2.RateLimitDescription, error) {
+func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.URL, target interface{}, body interface{}, opts ...ReqOpt) (*http.Header, *v2.RateLimitDescription, error) {
+	for _, opt := range opts {
+		opt(url)
+	}
+
 	var requestOptions []uhttp.RequestOption
 	requestOptions = append(requestOptions,
 		uhttp.WithAcceptJSONHeader(),
@@ -125,15 +129,7 @@ func (c *MetabaseClient) ListUsers(ctx context.Context, options PageOptions) ([]
 		return nil, "", nil, err
 	}
 
-	opts := []ReqOpt{
-		withLimitParam(options.Limit),
-		withOffsetParam(options.Offset),
-	}
-	for _, opt := range opts {
-		opt(queryUrl)
-	}
-
-	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &res, nil)
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &res, nil, withLimitParam(options.Limit), withOffsetParam(options.Offset))
 	if err != nil {
 		return nil, "", rateLimitDesc, fmt.Errorf("failed to fetch users: %w", err)
 	}

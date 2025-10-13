@@ -7,14 +7,13 @@
    No.
 
 ## Connector requirements
-This connector requires the open source version Metabase v0.49.x or v0.56.x to be downloaded in order to function correctly.
-* Official release: https://github.com/metabase/metabase/releases/tag/v0.49.0
-                    https://github.com/metabase/metabase/releases/tag/v0.56.0-beta
+For the connector to work properly, install the free open-source version of Metabase v0.49 or later, as it provides API key support.
+Versions lower than v0.49 are not supported.
 
-* Docker Hub image: https://hub.docker.com/r/metabase/metabase/tags?page=1&name=v0.49.0
-                    https://hub.docker.com/r/metabase/metabase/tags?name=v0.56.0
+* Official releases: https://github.com/metabase/metabase/releases
+* Docker Hub images: https://hub.docker.com/r/metabase/metabase/tags
 
-  Example (Docker):
+  Example:
   v0.49.0:
   ```
   docker run -d -p 3000:3000 \
