@@ -78,7 +78,7 @@ func TestGroupsList(t *testing.T) {
 func TestGroupsEntitlements(t *testing.T) {
 	ctx := context.Background()
 	groupResource := &v2.Resource{
-		Id:          &v2.ResourceId{ResourceType: groupResourceType.Id, Resource: "1"},
+		Id:          &v2.ResourceId{ResourceType: GroupResourceType.Id, Resource: "1"},
 		DisplayName: "All Users",
 	}
 

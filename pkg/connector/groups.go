@@ -22,7 +22,7 @@ type groupBuilder struct {
 }
 
 func (g *groupBuilder) ResourceType(_ context.Context) *v2.ResourceType {
-	return groupResourceType
+	return GroupResourceType
 }
 
 func (g *groupBuilder) List(ctx context.Context, _ *v2.ResourceId, _ *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
@@ -60,7 +60,7 @@ func (g *groupBuilder) Entitlements(_ context.Context, resource *v2.Resource, _ 
 	var rv []*v2.Entitlement
 	for _, role := range roles {
 		opts := []entitlement.EntitlementOption{
-			entitlement.WithGrantableTo(userResourceType),
+			entitlement.WithGrantableTo(UserResourceType),
 			entitlement.WithDisplayName(fmt.Sprintf("%s %s", resource.DisplayName, role.DisplayName)),
 			entitlement.WithDescription(fmt.Sprintf("Is a %s of %s group in Metabase", role.DisplayName, resource.DisplayName)),
 		}
@@ -84,7 +84,7 @@ func (g *groupBuilder) parseIntoGroupResource(group *client.Group) (*v2.Resource
 
 	return resourceSdk.NewGroupResource(
 		group.Name,
-		groupResourceType,
+		GroupResourceType,
 		group.ID,
 		[]resourceSdk.GroupTraitOption{resourceSdk.WithGroupProfile(profile)},
 	)

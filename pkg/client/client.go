@@ -30,6 +30,9 @@ const (
 
 	// https://www.metabase.com/docs/latest/api#tag/apipermissions/post/api/permissions/membership
 	getMemberships = "/api/permissions/membership"
+
+	// https://www.metabase.com/docs/latest/api#tag/apisetting/get/api/setting/{key}
+	getVersion = "/api/setting/version"
 )
 
 type MetabaseClient struct {
@@ -169,4 +172,20 @@ func (c *MetabaseClient) ListMemberships(ctx context.Context) (map[string][]*Mem
 	}
 
 	return membershipResponse, rateLimitDesc, nil
+}
+
+func (c *MetabaseClient) GetVersion(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error) {
+	var utilInfo VersionInfo
+
+	queryUrl, err := url.Parse(c.baseURL + getVersion)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &utilInfo, nil)
+	if err != nil {
+		return nil, rateLimitDesc, fmt.Errorf("failed to fetch Metabase version: %w", err)
+	}
+
+	return &utilInfo, rateLimitDesc, nil
 }

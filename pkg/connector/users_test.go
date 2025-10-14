@@ -89,7 +89,7 @@ func TestUsersList(t *testing.T) {
 func TestUsersGrants(t *testing.T) {
 	ctx := context.Background()
 	userResource := &v2.Resource{
-		Id: &v2.ResourceId{ResourceType: userResourceType.Id, Resource: "1"},
+		Id: &v2.ResourceId{ResourceType: UserResourceType.Id, Resource: "1"},
 	}
 
 	t.Run("should handle rate limit when listing memberships", func(t *testing.T) {

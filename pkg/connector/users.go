@@ -18,7 +18,7 @@ type userBuilder struct {
 }
 
 func (u *userBuilder) ResourceType(_ context.Context) *v2.ResourceType {
-	return userResourceType
+	return UserResourceType
 }
 
 func (u *userBuilder) List(ctx context.Context, _ *v2.ResourceId, pToken *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
@@ -78,7 +78,7 @@ func (u *userBuilder) Grants(ctx context.Context, resource *v2.Resource, _ *pagi
 	for _, membership := range userMemberships {
 		groupResource := &v2.Resource{
 			Id: &v2.ResourceId{
-				ResourceType: groupResourceType.Id,
+				ResourceType: GroupResourceType.Id,
 				Resource:     strconv.Itoa(membership.GroupID),
 			},
 		}
@@ -122,7 +122,7 @@ func (u *userBuilder) parseIntoUserResource(user *client.User) (*v2.Resource, er
 
 	return resourceSdk.NewUserResource(
 		user.Email,
-		userResourceType,
+		UserResourceType,
 		user.ID,
 		traitOptions,
 	)
