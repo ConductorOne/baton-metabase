@@ -83,9 +83,9 @@ func (u *userBuilder) Grants(ctx context.Context, resource *v2.Resource, _ *pagi
 			},
 		}
 
-		role := memberPermission
+		role := MemberPermission
 		if membership.IsGroupManager {
-			role = managerPermission
+			role = ManagerPermission
 		}
 
 		grants = append(grants, grant.NewGrant(

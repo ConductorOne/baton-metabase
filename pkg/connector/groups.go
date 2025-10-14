@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	memberPermission  = "member"
-	managerPermission = "manager"
+	MemberPermission  = "member"
+	ManagerPermission = "manager"
 )
 
 type groupBuilder struct {
@@ -52,8 +52,8 @@ var roles = []struct {
 	ID          string
 	DisplayName string
 }{
-	{ID: memberPermission, DisplayName: "Member"},
-	{ID: managerPermission, DisplayName: "Manager"},
+	{ID: MemberPermission, DisplayName: "Member"},
+	{ID: ManagerPermission, DisplayName: "Manager"},
 }
 
 func (g *groupBuilder) Entitlements(_ context.Context, resource *v2.Resource, _ *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
