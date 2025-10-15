@@ -207,6 +207,7 @@ github.com/conductorone/baton-sdk/pkg/synccompactor/naive
 github.com/conductorone/baton-sdk/pkg/tasks
 github.com/conductorone/baton-sdk/pkg/tasks/c1api
 github.com/conductorone/baton-sdk/pkg/tasks/local
+github.com/conductorone/baton-sdk/pkg/test
 github.com/conductorone/baton-sdk/pkg/types
 github.com/conductorone/baton-sdk/pkg/types/entitlement
 github.com/conductorone/baton-sdk/pkg/types/grant
@@ -453,6 +454,7 @@ github.com/spf13/viper/internal/features
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/assert/yaml
+github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.6.0
 ## explicit; go 1.18
 github.com/subosito/gotenv
