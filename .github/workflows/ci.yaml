@@ -104,7 +104,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "X-Metabase-Session: ${{ steps.login.outputs.session_id }}" \
             -d '{
-                  "group_id": 1,
+                  "group_id": 2,
                   "name": "CI Key",
                   "return_key": true
                 }')
