@@ -37,11 +37,11 @@ const (
 
 type MetabaseClient struct {
 	client  *uhttp.BaseHttpClient
-	baseURL string
+	baseURL *url.URL
 	apiKey  string
 }
 
-func New(ctx context.Context, baseURL string, apiKey string) (*MetabaseClient, error) {
+func New(ctx context.Context, rawBaseURL string, apiKey string) (*MetabaseClient, error) {
 	client, err := uhttp.NewClient(ctx)
 	if err != nil {
 		return nil, err
@@ -52,10 +52,14 @@ func New(ctx context.Context, baseURL string, apiKey string) (*MetabaseClient, e
 		return nil, err
 	}
 
-	baseURLTrimmed := strings.TrimRight(baseURL, "/")
+	baseURL, err := url.Parse(rawBaseURL)
+	if err != nil {
+		return nil, err
+	}
+
 	return &MetabaseClient{
 		client:  httpClient,
-		baseURL: baseURLTrimmed,
+		baseURL: baseURL,
 		apiKey:  apiKey,
 	}, nil
 }
@@ -127,10 +131,7 @@ func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.
 func (c *MetabaseClient) ListUsers(ctx context.Context, options PageOptions) ([]*User, string, *v2.RateLimitDescription, error) {
 	var res UsersQueryResponse
 
-	queryUrl, err := url.Parse(c.baseURL + getUsers)
-	if err != nil {
-		return nil, "", nil, err
-	}
+	queryUrl := c.baseURL.JoinPath(getUsers)
 
 	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &res, nil, withLimitParam(options.Limit), withOffsetParam(options.Offset))
 	if err != nil {
@@ -145,10 +146,7 @@ func (c *MetabaseClient) ListUsers(ctx context.Context, options PageOptions) ([]
 func (c *MetabaseClient) ListGroups(ctx context.Context) ([]*Group, *v2.RateLimitDescription, error) {
 	var resp []*Group
 
-	queryUrl, err := url.Parse(c.baseURL + getGroups)
-	if err != nil {
-		return nil, nil, err
-	}
+	queryUrl := c.baseURL.JoinPath(getGroups)
 
 	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &resp, nil)
 	if err != nil {
@@ -161,10 +159,7 @@ func (c *MetabaseClient) ListGroups(ctx context.Context) ([]*Group, *v2.RateLimi
 func (c *MetabaseClient) ListMemberships(ctx context.Context) (map[string][]*Membership, *v2.RateLimitDescription, error) {
 	var membershipResponse map[string][]*Membership
 
-	queryUrl, err := url.Parse(c.baseURL + getMemberships)
-	if err != nil {
-		return nil, nil, err
-	}
+	queryUrl := c.baseURL.JoinPath(getMemberships)
 
 	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &membershipResponse, nil)
 	if err != nil {
@@ -177,10 +172,7 @@ func (c *MetabaseClient) ListMemberships(ctx context.Context) (map[string][]*Mem
 func (c *MetabaseClient) GetVersion(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error) {
 	var utilInfo VersionInfo
 
-	queryUrl, err := url.Parse(c.baseURL + getVersion)
-	if err != nil {
-		return nil, nil, err
-	}
+	queryUrl := c.baseURL.JoinPath(getVersion)
 
 	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &utilInfo, nil)
 	if err != nil {

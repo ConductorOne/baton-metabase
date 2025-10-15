@@ -58,5 +58,6 @@ func getConnector(ctx context.Context, config *cfg.Metabase) (types.ConnectorSer
 		l.Error("error creating connector", zap.Error(err))
 		return nil, err
 	}
+
 	return conn, nil
 }
