@@ -57,14 +57,14 @@ jobs:
 
       - name: Set up Docker
         run: |
-          docker pull metabase/metabase:v0.56.0-beta
+          docker pull metabase/metabase:v0.56.x
 
       - name: Start Metabase
         run: |
           docker run -d -p 3000:3000 --name metabase-ci \
             -e MB_DB_FILE=/metabase.db \
             -v metabase-data-ci:/metabase.db \
-            metabase/metabase:v0.56.0-beta
+            metabase/metabase:v0.56.x
           sleep 30
 
       - name: Create CI Admin user
