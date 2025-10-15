@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BATON_LOG_LEVEL: debug
-      METABASE_URL: http://localhost:3000
+      BATON_BATON_METABASE_URL: http://localhost:3000
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -70,8 +70,8 @@ jobs:
       - name: Create CI Admin user
         id: ci_admin
         run: |
-          SETUP_TOKEN=$(curl -s $METABASE_URL/api/session/properties | jq -r '.["setup-token"]')
-          curl -s -X POST $METABASE_URL/api/setup \
+          SETUP_TOKEN=$(curl -s $BATON_METABASE_URL/api/session/properties | jq -r '.["setup-token"]')
+          curl -s -X POST $BATON_METABASE_URL/api/setup \
             -H "Content-Type: application/json" \
             -d '{
                   "token": "'"$SETUP_TOKEN"'",
@@ -88,7 +88,7 @@ jobs:
       - name: Log in CI Admin
         id: login
         run: |
-          SESSION_ID=$(curl -s -X POST $METABASE_URL/api/session \
+          SESSION_ID=$(curl -s -X POST $BATON_METABASE_URL/api/session \
             -H "Content-Type: application/json" \
             -d '{
                   "username": "ci@metabase.local",
@@ -100,7 +100,7 @@ jobs:
       - name: Create API Key
         id: api_key
         run: |
-          API_KEY_JSON=$(curl -s -X POST $METABASE_URL/api/api-key/ \
+          API_KEY_JSON=$(curl -s -X POST $BATON_METABASE_URL/api/api-key/ \
             -H "Content-Type: application/json" \
             -H "X-Metabase-Session: ${{ steps.login.outputs.session_id }}" \
             -d '{
@@ -112,7 +112,7 @@ jobs:
           echo "api_key=$API_KEY" >> $GITHUB_OUTPUT
 
       - name: Export API key as env var
-        run: echo "METABASE_API_KEY=${{ steps.api_key.outputs.api_key }}" >> $GITHUB_ENV
+        run: echo "BATON_METABASE_API_KEY=${{ steps.api_key.outputs.api_key }}" >> $GITHUB_ENV
 
       - name: Build baton-metabase
         run: go build ./cmd/baton-metabase
@@ -120,7 +120,7 @@ jobs:
       - name: Create test group
         id: create_group
         run: |
-          GROUP_JSON=$(curl -s -X POST $METABASE_URL/api/permissions/group \
+          GROUP_JSON=$(curl -s -X POST $BATON_METABASE_URL/api/permissions/group \
             -H "Content-Type: application/json" \
             -H "X-Metabase-Session: ${{ steps.login.outputs.session_id }}" \
             -d '{"name": "group-ci"}')
@@ -130,7 +130,7 @@ jobs:
       - name: Create test user
         id: test_user
         run: |
-          USER_JSON=$(curl -s -X POST $METABASE_URL/api/user \
+          USER_JSON=$(curl -s -X POST $BATON_METABASE_URL/api/user \
             -H "Content-Type: application/json" \
             -H "X-Metabase-Session: ${{ steps.login.outputs.session_id }}" \
             -d '{
