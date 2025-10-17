@@ -31,6 +31,7 @@ jobs:
         env:
           BATON_METABASE_API_KEY: apiKey
           BATON_METABASE_BASE_URL: https://metabase.someurl.com
+          BATON_METABASE_PAID_MODE: false
         run: ./connector capabilities > baton_capabilities.json
 
       - name: Commit changes

@@ -133,6 +133,7 @@ Available Commands:
   help               Help about any command
 
 Flags:
+      --metabase-with-paid-plan bool      Whether the Metabase instance is running a paid plan. Enables premium entitlements ($METABASE_WITH_PAID_PLAN)   
       --metabase-base-url string     The base URL of the Metabase instance. e.g., https://metabase.customer.com ($METABASE_BASE_URL)
       --metabase-api-key string      API key generated in Metabase for the connector ($METABASE_API_KEY)
       --client-id string             The client ID used to authenticate with ConductorOne ($BATON_CLIENT_ID)
