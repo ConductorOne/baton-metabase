@@ -82,8 +82,9 @@ func TestGroupsEntitlements(t *testing.T) {
 		DisplayName: "All Users",
 	}
 
-	t.Run("should return member and manager entitlements", func(t *testing.T) {
-		groupBuilder, _ := newTestGroupBuilder()
+	t.Run("should return both member and manager entitlements for paid plan", func(t *testing.T) {
+		groupBuilder, mockClient := newTestGroupBuilder()
+		mockClient.IsPaidPlanFunc = func() bool { return true }
 
 		entitlements, _, _, err := groupBuilder.Entitlements(ctx, groupResource, &pagination.Token{})
 		require.NoError(t, err)
@@ -96,5 +97,16 @@ func TestGroupsEntitlements(t *testing.T) {
 
 		require.Contains(t, ids, "group:1:member")
 		require.Contains(t, ids, "group:1:manager")
+	})
+
+	t.Run("should return only member entitlement for free plan", func(t *testing.T) {
+		groupBuilder, mockClient := newTestGroupBuilder()
+		mockClient.IsPaidPlanFunc = func() bool { return false }
+
+		entitlements, _, _, err := groupBuilder.Entitlements(ctx, groupResource, &pagination.Token{})
+		require.NoError(t, err)
+		require.Len(t, entitlements, 1)
+
+		require.Equal(t, "group:1:member", entitlements[0].Id)
 	})
 }
