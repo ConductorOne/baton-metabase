@@ -8,6 +8,8 @@ import (
 	"github.com/conductorone/baton-metabase/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
+	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
+	"github.com/conductorone/baton-sdk/pkg/crypto"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	"github.com/conductorone/baton-sdk/pkg/types/grant"
 	resourceSdk "github.com/conductorone/baton-sdk/pkg/types/resource"
@@ -96,6 +98,80 @@ func (u *userBuilder) Grants(ctx context.Context, resource *v2.Resource, _ *pagi
 	}
 
 	return grants, "", ann, nil
+}
+
+func (u *userBuilder) CreateAccountCapabilityDetails(
+	_ context.Context,
+) (*v2.CredentialDetailsAccountProvisioning, annotations.Annotations, error) {
+	return &v2.CredentialDetailsAccountProvisioning{
+		SupportedCredentialOptions: []v2.CapabilityDetailCredentialOption{
+			v2.CapabilityDetailCredentialOption_CAPABILITY_DETAIL_CREDENTIAL_OPTION_RANDOM_PASSWORD,
+		},
+		PreferredCredentialOption: v2.CapabilityDetailCredentialOption_CAPABILITY_DETAIL_CREDENTIAL_OPTION_RANDOM_PASSWORD,
+	}, nil, nil
+}
+
+func (u *userBuilder) CreateAccount(
+	ctx context.Context,
+	accountInfo *v2.AccountInfo,
+	_ *v2.LocalCredentialOptions,
+) (
+	connectorbuilder.CreateAccountResponse,
+	[]*v2.PlaintextData,
+	annotations.Annotations,
+	error,
+) {
+	ann := annotations.New()
+	profile := accountInfo.GetProfile().AsMap()
+
+	email := getProfileString(profile, "email")
+	firstName := getProfileString(profile, "first_name")
+	lastName := getProfileString(profile, "last_name")
+
+	if email == "" {
+		return nil, nil, nil, fmt.Errorf("missing required field: email")
+	}
+
+	password, err := crypto.GenerateRandomPassword(&v2.LocalCredentialOptions_RandomPassword{
+		Length: 12,
+	})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to generate password: %w", err)
+	}
+
+	createReq := &client.CreateUserRequest{
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		Password:  password,
+	}
+
+	user, rateLimitDesc, err := u.client.CreateUser(ctx, createReq)
+	if rateLimitDesc != nil {
+		ann.WithRateLimiting(rateLimitDesc)
+	}
+	if err != nil {
+		return nil, nil, ann, err
+	}
+
+	userResource, err := u.parseIntoUserResource(user)
+	if err != nil {
+		return nil, nil, ann, err
+	}
+
+	resp := &v2.CreateAccountResponse_SuccessResult{
+		Resource:              userResource,
+		IsCreateAccountResult: true,
+	}
+
+	plaintexts := []*v2.PlaintextData{
+		{
+			Name:  "password",
+			Bytes: []byte(password),
+		},
+	}
+
+	return resp, plaintexts, ann, nil
 }
 
 func (u *userBuilder) parseIntoUserResource(user *client.User) (*v2.Resource, error) {

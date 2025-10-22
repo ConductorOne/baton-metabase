@@ -12,4 +12,6 @@ type ClientService interface {
 	ListMemberships(ctx context.Context) (map[string][]*Membership, *v2.RateLimitDescription, error)
 	GetVersion(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error)
 	IsPaidPlan() bool
+	CreateUser(ctx context.Context, payload *CreateUserRequest) (*User, *v2.RateLimitDescription, error)
+	UpdateUserActiveStatus(ctx context.Context, userId string, active bool) (*User, *v2.RateLimitDescription, error)
 }

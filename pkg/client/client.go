@@ -28,6 +28,15 @@ const (
 	// https://www.metabase.com/docs/latest/api#tag/apiuser/get/api/user/
 	getUsers = "/api/user"
 
+	// https://www.metabase.com/docs/latest/api#tag/apiuser/post/api/user/
+	createUser = "/api/user"
+
+	// https://www.metabase.com/docs/latest/api#tag/apiuser/put/api/user/{id}/reactivate
+	activateUser = "/api/user/%s/reactivate"
+
+	// https://www.metabase.com/docs/latest/api#tag/apiuser/delete/api/user/{id}
+	deactivateUser = "/api/user/%s"
+
 	// https://www.metabase.com/docs/latest/api#tag/apipermissions/post/api/permissions/membership
 	getMemberships = "/api/permissions/membership"
 
@@ -135,7 +144,10 @@ func (c *MetabaseClient) ListUsers(ctx context.Context, options PageOptions) ([]
 
 	queryUrl := c.baseURL.JoinPath(getUsers)
 
-	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &res, nil, withLimitParam(options.Limit), withOffsetParam(options.Offset))
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &res, nil,
+		withLimitParam(options.Limit),
+		withOffsetParam(options.Offset),
+		withStatusAllParam())
 	if err != nil {
 		return nil, "", rateLimitDesc, fmt.Errorf("failed to fetch users: %w", err)
 	}
@@ -143,6 +155,41 @@ func (c *MetabaseClient) ListUsers(ctx context.Context, options PageOptions) ([]
 	nextToken := getNextPageToken(res.Offset, res.Limit, res.Total)
 
 	return res.Data, nextToken, rateLimitDesc, nil
+}
+
+func (c *MetabaseClient) CreateUser(ctx context.Context, request *CreateUserRequest) (*User, *v2.RateLimitDescription, error) {
+	queryUrl := c.baseURL.JoinPath(createUser)
+
+	var user User
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodPost, queryUrl, &user, request)
+	if err != nil {
+		return nil, rateLimitDesc, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return &user, rateLimitDesc, nil
+}
+
+func (c *MetabaseClient) UpdateUserActiveStatus(ctx context.Context, userId string, active bool) (*User, *v2.RateLimitDescription, error) {
+	var (
+		queryUrl *url.URL
+		method   string
+	)
+
+	if active {
+		method = http.MethodPut
+		queryUrl = c.baseURL.JoinPath(fmt.Sprintf(activateUser, userId))
+	} else {
+		method = http.MethodDelete
+		queryUrl = c.baseURL.JoinPath(fmt.Sprintf(deactivateUser, userId))
+	}
+
+	var user User
+	_, rateLimitDesc, err := c.doRequest(ctx, method, queryUrl, &user, nil)
+	if err != nil {
+		return nil, rateLimitDesc, fmt.Errorf("failed to update user active status in Metabase: %w", err)
+	}
+
+	return &user, rateLimitDesc, nil
 }
 
 func (c *MetabaseClient) ListGroups(ctx context.Context) ([]*Group, *v2.RateLimitDescription, error) {

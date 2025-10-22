@@ -12,6 +12,7 @@ import (
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	"github.com/conductorone/baton-sdk/pkg/test"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -145,4 +146,76 @@ func TestUsersGrants(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to list memberships")
 	})
+}
+
+func TestCreateAccountValidation(t *testing.T) {
+	ctx := context.Background()
+
+	testCases := []struct {
+		name          string
+		inputProfile  map[string]interface{}
+		expectedError string
+	}{
+		{
+			name:          "missing email",
+			inputProfile:  map[string]interface{}{"first_name": "Ana", "last_name": "Gomez"},
+			expectedError: "missing required field: email",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			userBuilder, _ := newTestUserBuilder()
+			profileStruct, _ := structpb.NewStruct(tc.inputProfile)
+			accountInfo := &v2.AccountInfo{Profile: profileStruct}
+
+			_, _, _, err := userBuilder.CreateAccount(ctx, accountInfo, nil)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedError)
+		})
+	}
+}
+
+func TestCreateAccountSuccess(t *testing.T) {
+	ctx := context.Background()
+	userBuilder, mockClient := newTestUserBuilder()
+
+	mockClient.CreateUserFunc = func(ctx context.Context, req *client.CreateUserRequest) (*client.User, *v2.RateLimitDescription, error) {
+		return &client.User{ID: 1, Email: req.Email, FirstName: req.FirstName, LastName: req.LastName}, nil, nil
+	}
+
+	profileStruct, _ := structpb.NewStruct(map[string]interface{}{
+		"email":      "ana.gomez@example.com",
+		"first_name": "Ana",
+		"last_name":  "Gomez",
+	})
+	accountInfo := &v2.AccountInfo{Profile: profileStruct}
+
+	resp, plaintexts, ann, err := userBuilder.CreateAccount(ctx, accountInfo, nil)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, plaintexts, 1)
+	require.Equal(t, "password", plaintexts[0].Name)
+	test.AssertNoRatelimitAnnotations(t, ann)
+}
+
+func TestCreateAccountRateLimitError(t *testing.T) {
+	ctx := context.Background()
+	userBuilder, mockClient := newTestUserBuilder()
+
+	mockClient.CreateUserFunc = func(ctx context.Context, req *client.CreateUserRequest) (*client.User, *v2.RateLimitDescription, error) {
+		return nil, &v2.RateLimitDescription{Limit: 100}, fmt.Errorf("API rate limit reached")
+	}
+
+	profileStruct, _ := structpb.NewStruct(map[string]interface{}{
+		"email":      "ana.gomez@example.com",
+		"first_name": "Ana",
+		"last_name":  "Gomez",
+	})
+	accountInfo := &v2.AccountInfo{Profile: profileStruct}
+
+	_, _, ann, err := userBuilder.CreateAccount(ctx, accountInfo, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "API rate limit reached")
+	require.NotNil(t, ann)
 }

@@ -65,7 +65,7 @@ jobs:
             -e MB_DB_FILE=/metabase.db \
             -v metabase-data-ci:/metabase.db \
             metabase/metabase:v0.56.x
-          sleep 30
+          sleep 120
 
       - name: Create CI Admin user
         id: ci_admin
@@ -154,12 +154,31 @@ jobs:
                 }'
 
       - name: Test syncing
-        uses: ConductorOne/github-workflows/actions/sync-test@v2
+        uses: ConductorOne/github-workflows/actions/sync-test@v3
         with:
           connector: ./baton-metabase
           baton-entitlement: group:${{steps.create_group.outputs.group_id}}:member
           baton-principal: ${{steps.test_user.outputs.user_id}}
           baton-principal-type: 'user'
+
+      - name: Test Account Provisioning
+        uses: ConductorOne/github-workflows/actions/account-provisioning@v3
+        with:
+          connector: './baton-metabase'
+          account-email: 'ci-user@metabase.local'
+          account-profile: '{"first_name": "CI", "last_name": "User", "username": "ci-user", "email": "ci-user@metabase.local"}'
+          account-type: 'user'
+          search-method: 'email'
+
+      - name: Test disable user action
+        run: |
+          ./baton-metabase --invoke-action=disable_user \
+            --invoke-action-args='{"userId": "${{ steps.test_user.outputs.user_id }}"}'
+
+      - name: Test enable user action
+        run: |
+          ./baton-metabase --invoke-action=enable_user \
+            --invoke-action-args='{"userId": "${{ steps.test_user.outputs.user_id }}"}'
 
       - name: Clean up
         if: always()
