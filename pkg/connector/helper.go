@@ -30,17 +30,3 @@ func getPageOptions(pToken *pagination.Token, pageSize int) (client.PageOptions,
 		Offset: offset,
 	}, nil
 }
-
-func getProfileString(profile map[string]interface{}, key string) string {
-	value, exists := profile[key]
-	if !exists {
-		return ""
-	}
-
-	strValue, isString := value.(string)
-	if !isString {
-		return ""
-	}
-
-	return strValue
-}

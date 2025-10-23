@@ -12,6 +12,7 @@ import (
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/uhttp"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 )
 
 const (
@@ -52,6 +53,8 @@ type MetabaseClient struct {
 }
 
 func New(ctx context.Context, rawBaseURL string, apiKey string, isPaidPlan bool) (*MetabaseClient, error) {
+	l := ctxzap.Extract(ctx)
+
 	client, err := uhttp.NewClient(ctx)
 	if err != nil {
 		return nil, err
@@ -65,6 +68,10 @@ func New(ctx context.Context, rawBaseURL string, apiKey string, isPaidPlan bool)
 	baseURL, err := url.Parse(rawBaseURL)
 	if err != nil {
 		return nil, err
+	}
+
+	if baseURL.Scheme != "https" {
+		l.Warn("Metabase connector is using HTTP. Make sure this instance is running in a trusted or on-premise environment.")
 	}
 
 	return &MetabaseClient{

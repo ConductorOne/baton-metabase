@@ -124,12 +124,19 @@ func (u *userBuilder) CreateAccount(
 	ann := annotations.New()
 	profile := accountInfo.GetProfile().AsMap()
 
-	email := getProfileString(profile, "email")
-	firstName := getProfileString(profile, "first_name")
-	lastName := getProfileString(profile, "last_name")
-
-	if email == "" {
+	email, ok := profile["email"].(string)
+	if !ok || email == "" {
 		return nil, nil, nil, fmt.Errorf("missing required field: email")
+	}
+
+	firstName, ok := profile["first_name"].(string)
+	if !ok || firstName == "" {
+		return nil, nil, nil, fmt.Errorf("missing required field: first_name")
+	}
+
+	lastName, ok := profile["last_name"].(string)
+	if !ok || lastName == "" {
+		return nil, nil, nil, fmt.Errorf("missing required field: last_name")
 	}
 
 	password, err := crypto.GenerateRandomPassword(&v2.LocalCredentialOptions_RandomPassword{

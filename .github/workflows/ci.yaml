@@ -165,8 +165,8 @@ jobs:
         uses: ConductorOne/github-workflows/actions/account-provisioning@v3
         with:
           connector: './baton-metabase'
-          account-email: 'ci-user@metabase.local'
-          account-profile: '{"first_name": "CI", "last_name": "User", "username": "ci-user", "email": "ci-user@metabase.local"}'
+          account-email: 'ci-user-provisioning@metabase.local'
+          account-profile: '{"first_name": "CI", "last_name": "User", "username": "ci-user", "email": "ci-user-provisioning@metabase.local"}'
           account-type: 'user'
           search-method: 'email'
 

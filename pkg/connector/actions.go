@@ -129,7 +129,7 @@ func (c *Connector) enableUser(ctx context.Context, args *structpb.Struct) (*str
 			"success": structpb.NewBoolValue(success),
 		},
 	}
-	return response, nil, nil
+	return response, ann, nil
 }
 
 func (c *Connector) disableUser(ctx context.Context, args *structpb.Struct) (*structpb.Struct, annotations.Annotations, error) {
@@ -179,5 +179,5 @@ func (c *Connector) disableUser(ctx context.Context, args *structpb.Struct) (*st
 			"success": structpb.NewBoolValue(success),
 		},
 	}
-	return response, nil, nil
+	return response, ann, nil
 }
