@@ -17,11 +17,7 @@ type PageOptions struct {
 type ReqOpt func(reqURL *url.URL)
 
 func withStatusAllParam() ReqOpt {
-	return func(u *url.URL) {
-		q := u.Query()
-		q.Set("status", "all")
-		u.RawQuery = q.Encode()
-	}
+	return withQueryParam("status", "all")
 }
 
 func withLimitParam(limit int) ReqOpt {
