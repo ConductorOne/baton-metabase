@@ -61,7 +61,8 @@ func TestEnableUserAction(t *testing.T) {
 		resp, ann, err := connector.enableUser(ctx, args)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
-		require.Nil(t, ann)
+		require.NotNil(t, ann)
+		require.Empty(t, ann)
 		require.Equal(t, true, resp.Fields["success"].GetBoolValue())
 	})
 
@@ -98,7 +99,8 @@ func TestDisableUserAction(t *testing.T) {
 		resp, ann, err := connector.disableUser(ctx, args)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
-		require.Nil(t, ann)
+		require.NotNil(t, ann)
+		require.Empty(t, ann)
 		require.Equal(t, true, resp.Fields["success"].GetBoolValue())
 	})
 
