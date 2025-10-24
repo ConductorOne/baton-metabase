@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/conductorone/baton-metabase/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -88,7 +89,15 @@ func (g *groupBuilder) Grant(ctx context.Context, principal *v2.Resource, entitl
 		return nil, fmt.Errorf("invalid user id %q: %w", principal.Id.Resource, err)
 	}
 
-	isManager := entitlement.Id == ManagerPermission
+	var isManager bool
+	switch {
+	case strings.HasSuffix(entitlement.Id, ":"+ManagerPermission) || entitlement.Id == ManagerPermission:
+		isManager = true
+	case strings.HasSuffix(entitlement.Id, ":"+MemberPermission) || entitlement.Id == MemberPermission:
+		isManager = false
+	default:
+		return nil, fmt.Errorf("unsupported entitlement id %q", entitlement.Id)
+	}
 
 	reqBody := &client.Membership{
 		GroupID:        groupId,
@@ -129,27 +138,19 @@ func (g *groupBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotations
 		return ann, fmt.Errorf("failed to list memberships: %w", err)
 	}
 
-	var membershipID int
-	found := false
 	for _, ms := range memberships {
 		for _, m := range ms {
 			if m.GroupID == groupId && m.UserID == userId {
-				membershipID = m.MembershipID
-				found = true
-				break
+				rateLimitDesc, err = g.client.RemoveUserFromGroup(ctx, m.MembershipID)
+				if rateLimitDesc != nil {
+					ann.WithRateLimiting(rateLimitDesc)
+				}
+				if err != nil {
+					return ann, fmt.Errorf("failed to revoke user %d from group %d: %w", userId, groupId, err)
+				}
+				return ann, nil
 			}
 		}
-		if found {
-			break
-		}
-	}
-
-	rateLimitDesc, err = g.client.RemoveUserFromGroup(ctx, membershipID)
-	if rateLimitDesc != nil {
-		ann.WithRateLimiting(rateLimitDesc)
-	}
-	if err != nil {
-		return ann, fmt.Errorf("failed to revoke user %d from group %d: %w", userId, groupId, err)
 	}
 
 	return ann, nil

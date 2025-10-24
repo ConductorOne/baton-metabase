@@ -244,12 +244,12 @@ func (c *MetabaseClient) RemoveUserFromGroup(ctx context.Context, membershipID i
 	membershipIDStr := strconv.Itoa(membershipID)
 	queryUrl := c.baseURL.JoinPath(fmt.Sprintf(removeUserFromGroup, membershipIDStr))
 
-	_, _, err := c.doRequest(ctx, http.MethodDelete, queryUrl, nil, nil)
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodDelete, queryUrl, nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to remove membership %d from group: %w", membershipID, err)
+		return rateLimitDesc, fmt.Errorf("failed to remove membership %d from group: %w", membershipID, err)
 	}
 
-	return nil, nil
+	return rateLimitDesc, nil
 }
 
 func (c *MetabaseClient) IsPaidPlan() bool {
