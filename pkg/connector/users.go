@@ -204,7 +204,7 @@ func (u *userBuilder) parseIntoUserResource(user *client.User) (*v2.Resource, er
 	}
 
 	return resourceSdk.NewUserResource(
-		user.Email,
+		fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		UserResourceType,
 		user.ID,
 		traitOptions,

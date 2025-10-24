@@ -17,35 +17,6 @@ func newTestConnector() (*Connector, *client.MockService) {
 	return conn, mockClient
 }
 
-func TestGetVersion(t *testing.T) {
-	ctx := context.Background()
-	_, mockClient := newTestConnector()
-
-	t.Run("should return version successfully", func(t *testing.T) {
-		mockClient.GetVersionFunc = func(ctx context.Context) (*client.VersionInfo, *v2.RateLimitDescription, error) {
-			return &client.VersionInfo{Tag: "v0.49.2"}, nil, nil
-		}
-
-		versionInfo, rateLimit, err := mockClient.GetVersion(ctx)
-		require.NoError(t, err)
-		require.NotNil(t, versionInfo)
-		require.Equal(t, "v0.49.2", versionInfo.Tag)
-		require.Nil(t, rateLimit)
-	})
-
-	t.Run("should return error if API fails", func(t *testing.T) {
-		mockClient.GetVersionFunc = func(ctx context.Context) (*client.VersionInfo, *v2.RateLimitDescription, error) {
-			return nil, nil, fmt.Errorf("API error")
-		}
-
-		versionInfo, rateLimit, err := mockClient.GetVersion(ctx)
-		require.Error(t, err)
-		require.Nil(t, versionInfo)
-		require.Nil(t, rateLimit)
-		require.Contains(t, err.Error(), "API error")
-	})
-}
-
 func TestEnableUserAction(t *testing.T) {
 	ctx := context.Background()
 	connector, mockClient := newTestConnector()

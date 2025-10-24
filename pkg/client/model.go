@@ -46,11 +46,6 @@ type Group struct {
 	MemberCount int    `json:"member_count"`
 }
 
-// VersionInfo represents the version information.
-type VersionInfo struct {
-	Tag string `json:"tag"`
-}
-
 type ErrorResponse struct {
 	MessageText string `json:"message,omitempty"`
 	Status      int    `json:"status,omitempty"`
