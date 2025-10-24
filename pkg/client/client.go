@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -41,8 +42,11 @@ const (
 	// https://www.metabase.com/docs/latest/api#tag/apipermissions/post/api/permissions/membership
 	getMemberships = "/api/permissions/membership"
 
-	// https://www.metabase.com/docs/latest/api#tag/apisetting/get/api/setting/{key}
-	getVersion = "/api/setting/version"
+	// https://www.metabase.com/docs/latest/api#tag/apipermissions/post/api/permissions/membership
+	addUserToGroup = "/api/permissions/membership"
+
+	// https://www.metabase.com/docs/latest/api#tag/apipermissions/delete/api/permissions/membership/{id}
+	removeUserFromGroup = "/api/permissions/membership/%s"
 )
 
 type MetabaseClient struct {
@@ -225,17 +229,27 @@ func (c *MetabaseClient) ListMemberships(ctx context.Context) (map[string][]*Mem
 	return membershipResponse, rateLimitDesc, nil
 }
 
-func (c *MetabaseClient) GetVersion(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error) {
-	var utilInfo VersionInfo
+func (c *MetabaseClient) AddUserToGroup(ctx context.Context, request *Membership) (*v2.RateLimitDescription, error) {
+	queryUrl := c.baseURL.JoinPath(addUserToGroup)
 
-	queryUrl := c.baseURL.JoinPath(getVersion)
-
-	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &utilInfo, nil)
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodPost, queryUrl, nil, request)
 	if err != nil {
-		return nil, rateLimitDesc, fmt.Errorf("failed to fetch Metabase version: %w", err)
+		return rateLimitDesc, fmt.Errorf("failed to add user %d to group %d: %w", request.UserID, request.GroupID, err)
 	}
 
-	return &utilInfo, rateLimitDesc, nil
+	return rateLimitDesc, nil
+}
+
+func (c *MetabaseClient) RemoveUserFromGroup(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
+	membershipIDStr := strconv.Itoa(membershipID)
+	queryUrl := c.baseURL.JoinPath(fmt.Sprintf(removeUserFromGroup, membershipIDStr))
+
+	_, _, err := c.doRequest(ctx, http.MethodDelete, queryUrl, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to remove membership %d from group: %w", membershipID, err)
+	}
+
+	return nil, nil
 }
 
 func (c *MetabaseClient) IsPaidPlan() bool {

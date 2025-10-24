@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/conductorone/baton-metabase/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -72,6 +73,86 @@ func (g *groupBuilder) Entitlements(_ context.Context, resource *v2.Resource, _ 
 // Grants is intentionally empty because group membership grants are computed in the userBuilder.
 func (g *groupBuilder) Grants(_ context.Context, _ *v2.Resource, _ *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
 	return nil, "", nil, nil
+}
+
+func (g *groupBuilder) Grant(ctx context.Context, principal *v2.Resource, entitlement *v2.Entitlement) (annotations.Annotations, error) {
+	ann := annotations.New()
+	groupIdStr := entitlement.Resource.Id.Resource
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group id %q: %w", groupIdStr, err)
+	}
+
+	userId, err := strconv.Atoi(principal.Id.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id %q: %w", principal.Id.Resource, err)
+	}
+
+	isManager := entitlement.Id == ManagerPermission
+
+	reqBody := &client.Membership{
+		GroupID:        groupId,
+		UserID:         userId,
+		IsGroupManager: isManager,
+	}
+
+	rateLimitDesc, err := g.client.AddUserToGroup(ctx, reqBody)
+	if rateLimitDesc != nil {
+		ann.WithRateLimiting(rateLimitDesc)
+	}
+	if err != nil {
+		return ann, fmt.Errorf("failed to grant user %d to group %d: %w", userId, groupId, err)
+	}
+
+	return ann, nil
+}
+
+func (g *groupBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotations.Annotations, error) {
+	ann := annotations.New()
+
+	groupIdStr := grant.Entitlement.Resource.Id.Resource
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group id %q: %w", groupIdStr, err)
+	}
+
+	userId, err := strconv.Atoi(grant.Principal.Id.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id %q: %w", grant.Principal.Id.Resource, err)
+	}
+
+	memberships, rateLimitDesc, err := g.client.ListMemberships(ctx)
+	if rateLimitDesc != nil {
+		ann.WithRateLimiting(rateLimitDesc)
+	}
+	if err != nil {
+		return ann, fmt.Errorf("failed to list memberships: %w", err)
+	}
+
+	var membershipID int
+	found := false
+	for _, ms := range memberships {
+		for _, m := range ms {
+			if m.GroupID == groupId && m.UserID == userId {
+				membershipID = m.MembershipID
+				found = true
+				break
+			}
+		}
+		if found {
+			break
+		}
+	}
+
+	rateLimitDesc, err = g.client.RemoveUserFromGroup(ctx, membershipID)
+	if rateLimitDesc != nil {
+		ann.WithRateLimiting(rateLimitDesc)
+	}
+	if err != nil {
+		return ann, fmt.Errorf("failed to revoke user %d from group %d: %w", userId, groupId, err)
+	}
+
+	return ann, nil
 }
 
 func (g *groupBuilder) parseIntoGroupResource(group *client.Group) (*v2.Resource, error) {

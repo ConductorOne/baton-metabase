@@ -110,3 +110,115 @@ func TestGroupsEntitlements(t *testing.T) {
 		require.Equal(t, "group:1:member", entitlements[0].Id)
 	})
 }
+
+func TestGroupsGrantAndRevoke(t *testing.T) {
+	ctx := context.Background()
+
+	userResource := &v2.Resource{
+		Id:          &v2.ResourceId{ResourceType: UserResourceType.Id, Resource: "12"},
+		DisplayName: "John Doe",
+	}
+
+	groupResource := &v2.Resource{
+		Id:          &v2.ResourceId{ResourceType: GroupResourceType.Id, Resource: "3"},
+		DisplayName: "Developers",
+	}
+
+	t.Run("grant user as member", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		entitlement := &v2.Entitlement{Id: MemberPermission, Resource: groupResource}
+
+		mock.AddUserToGroupFunc = func(ctx context.Context, req *client.Membership) (*v2.RateLimitDescription, error) {
+			require.Equal(t, 3, req.GroupID)
+			require.Equal(t, 12, req.UserID)
+			require.False(t, req.IsGroupManager)
+			return nil, nil
+		}
+
+		ann, err := builder.Grant(ctx, userResource, entitlement)
+		require.NoError(t, err)
+		require.NotNil(t, ann)
+	})
+
+	t.Run("grant user as manager", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		entitlement := &v2.Entitlement{Id: ManagerPermission, Resource: groupResource}
+
+		mock.AddUserToGroupFunc = func(ctx context.Context, req *client.Membership) (*v2.RateLimitDescription, error) {
+			require.True(t, req.IsGroupManager)
+			return nil, nil
+		}
+
+		ann, err := builder.Grant(ctx, userResource, entitlement)
+		require.NoError(t, err)
+		require.NotNil(t, ann)
+	})
+
+	t.Run("grant returns rate limit error", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		entitlement := &v2.Entitlement{Id: MemberPermission, Resource: groupResource}
+		rateLimit := &v2.RateLimitDescription{Limit: 10}
+
+		mock.AddUserToGroupFunc = func(ctx context.Context, req *client.Membership) (*v2.RateLimitDescription, error) {
+			return rateLimit, fmt.Errorf("rate limited")
+		}
+
+		ann, err := builder.Grant(ctx, userResource, entitlement)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "rate limited")
+		require.NotNil(t, ann)
+	})
+
+	t.Run("revoke user from group", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		grant := &v2.Grant{Entitlement: &v2.Entitlement{Resource: groupResource}, Principal: userResource}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{"3": {{MembershipID: 101, GroupID: 3, UserID: 12}}}, nil, nil
+		}
+		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
+			require.Equal(t, 101, membershipID)
+			return nil, nil
+		}
+
+		ann, err := builder.Revoke(ctx, grant)
+		require.NoError(t, err)
+		require.NotNil(t, ann)
+	})
+
+	t.Run("revoke correct membership when multiple memberships exist", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		grant := &v2.Grant{Entitlement: &v2.Entitlement{Resource: groupResource}, Principal: userResource}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{
+				"2": {{MembershipID: 200, GroupID: 2, UserID: 12}},
+				"3": {
+					{MembershipID: 101, GroupID: 3, UserID: 12},
+					{MembershipID: 102, GroupID: 3, UserID: 13},
+				},
+			}, nil, nil
+		}
+		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
+			require.Equal(t, 101, membershipID)
+			return nil, nil
+		}
+
+		ann, err := builder.Revoke(ctx, grant)
+		require.NoError(t, err)
+		require.NotNil(t, ann)
+	})
+
+	t.Run("revoke fails if listing memberships fails", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		grant := &v2.Grant{Entitlement: &v2.Entitlement{Resource: groupResource}, Principal: userResource}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return nil, nil, fmt.Errorf("list error")
+		}
+
+		_, err := builder.Revoke(ctx, grant)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "list error")
+	})
+}

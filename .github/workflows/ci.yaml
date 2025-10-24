@@ -142,17 +142,6 @@ jobs:
           USER_ID=$(echo "$USER_JSON" | jq -r '.id')
           echo "user_id=$USER_ID" >> $GITHUB_OUTPUT
 
-      - name: Add test user to group
-        run: |
-          curl -s -X POST "$BATON_METABASE_BASE_URL/api/permissions/membership" \
-            -H "Content-Type: application/json" \
-            -H "X-Metabase-Session: ${{ steps.login.outputs.session_id }}" \
-            -d '{
-                  "group_id": ${{ steps.create_group.outputs.group_id }},
-                  "user_id": ${{ steps.test_user.outputs.user_id }},
-                  "is_group_manager": false
-                }'
-
       - name: Test syncing
         uses: ConductorOne/github-workflows/actions/sync-test@v3
         with:
