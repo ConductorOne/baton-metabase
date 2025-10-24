@@ -23,6 +23,14 @@ type UsersQueryResponse struct {
 	Offset int     `json:"offset"`
 }
 
+type CreateUserRequest struct {
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	IsActive  bool   `json:"is_active"`
+	Password  string `json:"password"`
+}
+
 // Membership represents the relationship between a user and a group in Metabase.
 type Membership struct {
 	MembershipID   int  `json:"membership_id"`

@@ -7,11 +7,13 @@ import (
 )
 
 type MockService struct {
-	ListUsersFunc       func(ctx context.Context, options PageOptions) ([]*User, string, *v2.RateLimitDescription, error)
-	ListGroupsFunc      func(ctx context.Context) ([]*Group, *v2.RateLimitDescription, error)
-	ListMembershipsFunc func(ctx context.Context) (map[string][]*Membership, *v2.RateLimitDescription, error)
-	GetVersionFunc      func(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error)
-	IsPaidPlanFunc      func() bool
+	ListUsersFunc              func(ctx context.Context, options PageOptions) ([]*User, string, *v2.RateLimitDescription, error)
+	ListGroupsFunc             func(ctx context.Context) ([]*Group, *v2.RateLimitDescription, error)
+	ListMembershipsFunc        func(ctx context.Context) (map[string][]*Membership, *v2.RateLimitDescription, error)
+	GetVersionFunc             func(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error)
+	IsPaidPlanFunc             func() bool
+	CreateUserFunc             func(ctx context.Context, request *CreateUserRequest) (*User, *v2.RateLimitDescription, error)
+	UpdateUserActiveStatusFunc func(ctx context.Context, userId string, active bool) (*User, *v2.RateLimitDescription, error)
 }
 
 func (m *MockService) ListUsers(ctx context.Context, options PageOptions) ([]*User, string, *v2.RateLimitDescription, error) {
@@ -35,4 +37,12 @@ func (m *MockService) IsPaidPlan() bool {
 		return m.IsPaidPlanFunc()
 	}
 	return false
+}
+
+func (m *MockService) CreateUser(ctx context.Context, request *CreateUserRequest) (*User, *v2.RateLimitDescription, error) {
+	return m.CreateUserFunc(ctx, request)
+}
+
+func (m *MockService) UpdateUserActiveStatus(ctx context.Context, userId string, active bool) (*User, *v2.RateLimitDescription, error) {
+	return m.UpdateUserActiveStatusFunc(ctx, userId, active)
 }
