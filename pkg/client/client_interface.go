@@ -14,5 +14,5 @@ type ClientService interface {
 	CreateUser(ctx context.Context, payload *CreateUserRequest) (*User, *v2.RateLimitDescription, error)
 	UpdateUserActiveStatus(ctx context.Context, userId string, active bool) (*User, *v2.RateLimitDescription, error)
 	AddUserToGroup(ctx context.Context, request *Membership) (*v2.RateLimitDescription, error)
-	RemoveUserFromGroup(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error)
+	RemoveUserFromGroup(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error)
 }

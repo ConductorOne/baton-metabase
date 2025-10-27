@@ -78,15 +78,31 @@ func (g *groupBuilder) Grants(_ context.Context, _ *v2.Resource, _ *pagination.T
 
 func (g *groupBuilder) Grant(ctx context.Context, principal *v2.Resource, entitlement *v2.Entitlement) (annotations.Annotations, error) {
 	ann := annotations.New()
-	groupIdStr := entitlement.Resource.Id.Resource
-	groupId, err := strconv.Atoi(groupIdStr)
+
+	groupID, err := strconv.Atoi(entitlement.Resource.Id.Resource)
 	if err != nil {
-		return nil, fmt.Errorf("invalid group id %q: %w", groupIdStr, err)
+		return nil, fmt.Errorf("invalid group id %q: %w", entitlement.Resource.Id.Resource, err)
 	}
 
-	userId, err := strconv.Atoi(principal.Id.Resource)
+	userIDStr := principal.Id.Resource
+	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user id %q: %w", principal.Id.Resource, err)
+	}
+
+	memberships, rateLimitDesc, err := g.client.ListMemberships(ctx)
+	if rateLimitDesc != nil {
+		ann.WithRateLimiting(rateLimitDesc)
+	}
+	if err != nil {
+		return ann, fmt.Errorf("failed to list memberships: %w", err)
+	}
+
+	userMemberships := memberships[userIDStr]
+	for _, m := range userMemberships {
+		if m.GroupID == groupID {
+			return annotations.New(&v2.GrantAlreadyExists{}), nil
+		}
 	}
 
 	var isManager bool
@@ -100,17 +116,17 @@ func (g *groupBuilder) Grant(ctx context.Context, principal *v2.Resource, entitl
 	}
 
 	reqBody := &client.Membership{
-		GroupID:        groupId,
-		UserID:         userId,
+		GroupID:        groupID,
+		UserID:         userID,
 		IsGroupManager: isManager,
 	}
 
-	rateLimitDesc, err := g.client.AddUserToGroup(ctx, reqBody)
+	rateLimitDesc, err = g.client.AddUserToGroup(ctx, reqBody)
 	if rateLimitDesc != nil {
 		ann.WithRateLimiting(rateLimitDesc)
 	}
 	if err != nil {
-		return ann, fmt.Errorf("failed to grant user %d to group %d: %w", userId, groupId, err)
+		return ann, fmt.Errorf("failed to grant user %d to group %d: %w", userID, groupID, err)
 	}
 
 	return ann, nil
@@ -119,13 +135,13 @@ func (g *groupBuilder) Grant(ctx context.Context, principal *v2.Resource, entitl
 func (g *groupBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotations.Annotations, error) {
 	ann := annotations.New()
 
-	groupIdStr := grant.Entitlement.Resource.Id.Resource
-	groupId, err := strconv.Atoi(groupIdStr)
+	groupID, err := strconv.Atoi(grant.Entitlement.Resource.Id.Resource)
 	if err != nil {
-		return nil, fmt.Errorf("invalid group id %q: %w", groupIdStr, err)
+		return nil, fmt.Errorf("invalid group id %q: %w", grant.Entitlement.Resource.Id.Resource, err)
 	}
 
-	userId, err := strconv.Atoi(grant.Principal.Id.Resource)
+	userIDStr := grant.Principal.Id.Resource
+	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user id %q: %w", grant.Principal.Id.Resource, err)
 	}
@@ -138,19 +154,25 @@ func (g *groupBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotations
 		return ann, fmt.Errorf("failed to list memberships: %w", err)
 	}
 
-	for _, ms := range memberships {
-		for _, m := range ms {
-			if m.GroupID == groupId && m.UserID == userId {
-				rateLimitDesc, err = g.client.RemoveUserFromGroup(ctx, m.MembershipID)
-				if rateLimitDesc != nil {
-					ann.WithRateLimiting(rateLimitDesc)
-				}
-				if err != nil {
-					return ann, fmt.Errorf("failed to revoke user %d from group %d: %w", userId, groupId, err)
-				}
-				return ann, nil
-			}
+	userMemberships := memberships[userIDStr]
+	var targetMembership *client.Membership
+	for _, m := range userMemberships {
+		if m.GroupID == groupID {
+			targetMembership = m
+			break
 		}
+	}
+
+	if targetMembership == nil {
+		return annotations.New(&v2.GrantAlreadyRevoked{}), nil
+	}
+
+	rateLimitDesc, err = g.client.RemoveUserFromGroup(ctx, strconv.Itoa(targetMembership.MembershipID))
+	if rateLimitDesc != nil {
+		ann.WithRateLimiting(rateLimitDesc)
+	}
+	if err != nil {
+		return ann, fmt.Errorf("failed to revoke user %d from group %d: %w", userID, groupID, err)
 	}
 
 	return ann, nil

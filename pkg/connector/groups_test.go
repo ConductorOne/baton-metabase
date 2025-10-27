@@ -128,6 +128,10 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 		builder, mock := newTestGroupBuilder()
 		entitlement := &v2.Entitlement{Id: MemberPermission, Resource: groupResource}
 
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{}, nil, nil
+		}
+
 		mock.AddUserToGroupFunc = func(ctx context.Context, req *client.Membership) (*v2.RateLimitDescription, error) {
 			require.Equal(t, 3, req.GroupID)
 			require.Equal(t, 12, req.UserID)
@@ -140,9 +144,28 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 		require.NotNil(t, ann)
 	})
 
+	t.Run("grant already exists", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		entitlement := &v2.Entitlement{Id: MemberPermission, Resource: groupResource}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{
+				"12": {{MembershipID: 101, GroupID: 3, UserID: 12}},
+			}, nil, nil
+		}
+
+		ann, err := builder.Grant(ctx, userResource, entitlement)
+		require.NoError(t, err)
+		require.NotNil(t, ann)
+	})
+
 	t.Run("grant user as manager", func(t *testing.T) {
 		builder, mock := newTestGroupBuilder()
 		entitlement := &v2.Entitlement{Id: ManagerPermission, Resource: groupResource}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{}, nil, nil
+		}
 
 		mock.AddUserToGroupFunc = func(ctx context.Context, req *client.Membership) (*v2.RateLimitDescription, error) {
 			require.True(t, req.IsGroupManager)
@@ -159,6 +182,10 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 		entitlement := &v2.Entitlement{Id: MemberPermission, Resource: groupResource}
 		rateLimit := &v2.RateLimitDescription{Limit: 10}
 
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{}, nil, nil
+		}
+
 		mock.AddUserToGroupFunc = func(ctx context.Context, req *client.Membership) (*v2.RateLimitDescription, error) {
 			return rateLimit, fmt.Errorf("rate limited")
 		}
@@ -174,11 +201,28 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 		grant := &v2.Grant{Entitlement: &v2.Entitlement{Resource: groupResource}, Principal: userResource}
 
 		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{"12": {{MembershipID: 101, GroupID: 3, UserID: 12}}}, nil, nil
+		}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
 			return map[string][]*client.Membership{"3": {{MembershipID: 101, GroupID: 3, UserID: 12}}}, nil, nil
 		}
-		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
+		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
 			require.Equal(t, 101, membershipID)
 			return nil, nil
+		}
+
+		ann, err := builder.Revoke(ctx, grant)
+		require.NoError(t, err)
+		require.NotNil(t, ann)
+	})
+
+	t.Run("revoke already revoked", func(t *testing.T) {
+		builder, mock := newTestGroupBuilder()
+		grant := &v2.Grant{Entitlement: &v2.Entitlement{Resource: groupResource}, Principal: userResource}
+
+		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
+			return map[string][]*client.Membership{}, nil, nil
 		}
 
 		ann, err := builder.Revoke(ctx, grant)
@@ -199,7 +243,7 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 				},
 			}, nil, nil
 		}
-		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
+		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
 			require.Equal(t, 101, membershipID)
 			return nil, nil
 		}

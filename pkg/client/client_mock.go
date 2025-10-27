@@ -14,7 +14,7 @@ type MockService struct {
 	CreateUserFunc             func(ctx context.Context, request *CreateUserRequest) (*User, *v2.RateLimitDescription, error)
 	UpdateUserActiveStatusFunc func(ctx context.Context, userId string, active bool) (*User, *v2.RateLimitDescription, error)
 	AddUserToGroupFunc         func(ctx context.Context, request *Membership) (*v2.RateLimitDescription, error)
-	RemoveUserFromGroupFunc    func(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error)
+	RemoveUserFromGroupFunc    func(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error)
 }
 
 func (m *MockService) ListUsers(ctx context.Context, options PageOptions) ([]*User, string, *v2.RateLimitDescription, error) {
@@ -48,6 +48,6 @@ func (m *MockService) AddUserToGroup(ctx context.Context, request *Membership) (
 	return m.AddUserToGroupFunc(ctx, request)
 }
 
-func (m *MockService) RemoveUserFromGroup(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
+func (m *MockService) RemoveUserFromGroup(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
 	return m.RemoveUserFromGroupFunc(ctx, membershipID)
 }

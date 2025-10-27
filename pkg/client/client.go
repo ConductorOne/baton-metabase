@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -240,13 +239,12 @@ func (c *MetabaseClient) AddUserToGroup(ctx context.Context, request *Membership
 	return rateLimitDesc, nil
 }
 
-func (c *MetabaseClient) RemoveUserFromGroup(ctx context.Context, membershipID int) (*v2.RateLimitDescription, error) {
-	membershipIDStr := strconv.Itoa(membershipID)
-	queryUrl := c.baseURL.JoinPath(fmt.Sprintf(removeUserFromGroup, membershipIDStr))
+func (c *MetabaseClient) RemoveUserFromGroup(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
+	queryUrl := c.baseURL.JoinPath(fmt.Sprintf(removeUserFromGroup, membershipID))
 
 	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodDelete, queryUrl, nil, nil)
 	if err != nil {
-		return rateLimitDesc, fmt.Errorf("failed to remove membership %d from group: %w", membershipID, err)
+		return rateLimitDesc, fmt.Errorf("failed to remove membership %s from group: %w", membershipID, err)
 	}
 
 	return rateLimitDesc, nil
