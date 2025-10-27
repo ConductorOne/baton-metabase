@@ -201,10 +201,6 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 		grant := &v2.Grant{Entitlement: &v2.Entitlement{Resource: groupResource}, Principal: userResource}
 
 		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
-			return map[string][]*client.Membership{"12": {{MembershipID: 101, GroupID: 3, UserID: 12}}}, nil, nil
-		}
-
-		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
 			return map[string][]*client.Membership{"3": {{MembershipID: 101, GroupID: 3, UserID: 12}}}, nil, nil
 		}
 		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
@@ -236,15 +232,18 @@ func TestGroupsGrantAndRevoke(t *testing.T) {
 
 		mock.ListMembershipsFunc = func(ctx context.Context) (map[string][]*client.Membership, *v2.RateLimitDescription, error) {
 			return map[string][]*client.Membership{
-				"2": {{MembershipID: 200, GroupID: 2, UserID: 12}},
-				"3": {
+				"12": {
+					{MembershipID: 200, GroupID: 2, UserID: 12},
 					{MembershipID: 101, GroupID: 3, UserID: 12},
+				},
+				"13": {
 					{MembershipID: 102, GroupID: 3, UserID: 13},
 				},
 			}, nil, nil
 		}
+
 		mock.RemoveUserFromGroupFunc = func(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
-			require.Equal(t, 101, membershipID)
+			require.Equal(t, "101", membershipID)
 			return nil, nil
 		}
 
