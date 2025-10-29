@@ -104,7 +104,14 @@ func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.
 	}
 
 	var rateLimitData v2.RateLimitDescription
-	response, err := c.client.Do(request, uhttp.WithRatelimitData(&rateLimitData))
+	doOptions := []uhttp.DoOption{
+		uhttp.WithRatelimitData(&rateLimitData),
+	}
+	if target != nil {
+		doOptions = append(doOptions, uhttp.WithJSONResponse(target))
+	}
+
+	response, err := c.client.Do(request, doOptions...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("request failed: %w", err)
 	}
@@ -138,12 +145,6 @@ func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.
 
 		return nil, &rateLimitData, fmt.Errorf("metabase API error: status %d %s: %s",
 			response.StatusCode, response.Status, bodyStr)
-	}
-
-	if target != nil {
-		if err := json.NewDecoder(response.Body).Decode(target); err != nil {
-			return nil, &rateLimitData, fmt.Errorf("failed to decode JSON response: %w", err)
-		}
 	}
 
 	return &response.Header, &rateLimitData, nil
