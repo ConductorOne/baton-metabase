@@ -20,7 +20,7 @@ const (
 	ActionDisableUser = "disable_user"
 )
 
-var enableUserAction = &v2.BatonActionSchema{
+var EnableUserAction = &v2.BatonActionSchema{
 	Name: ActionEnableUser,
 	Arguments: []*config.Field{
 		{
@@ -43,7 +43,7 @@ var enableUserAction = &v2.BatonActionSchema{
 	},
 }
 
-var disableUserAction = &v2.BatonActionSchema{
+var DisableUserAction = &v2.BatonActionSchema{
 	Name: ActionDisableUser,
 	Arguments: []*config.Field{
 		{
@@ -69,12 +69,12 @@ var disableUserAction = &v2.BatonActionSchema{
 func (c *Connector) RegisterActionManager(ctx context.Context) (connectorbuilder.CustomActionManager, error) {
 	actionManager := actions.NewActionManager(ctx)
 
-	err := actionManager.RegisterAction(ctx, enableUserAction.Name, enableUserAction, c.enableUser)
+	err := actionManager.RegisterAction(ctx, EnableUserAction.Name, EnableUserAction, c.EnableUser)
 	if err != nil {
 		return nil, err
 	}
 
-	err = actionManager.RegisterAction(ctx, disableUserAction.Name, disableUserAction, c.disableUser)
+	err = actionManager.RegisterAction(ctx, DisableUserAction.Name, DisableUserAction, c.DisableUser)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (c *Connector) RegisterActionManager(ctx context.Context) (connectorbuilder
 	return actionManager, nil
 }
 
-func (c *Connector) enableUser(ctx context.Context, args *structpb.Struct) (*structpb.Struct, annotations.Annotations, error) {
+func (c *Connector) EnableUser(ctx context.Context, args *structpb.Struct) (*structpb.Struct, annotations.Annotations, error) {
 	l := ctxzap.Extract(ctx)
 	ann := annotations.New()
 
@@ -132,7 +132,7 @@ func (c *Connector) enableUser(ctx context.Context, args *structpb.Struct) (*str
 	return response, ann, nil
 }
 
-func (c *Connector) disableUser(ctx context.Context, args *structpb.Struct) (*structpb.Struct, annotations.Annotations, error) {
+func (c *Connector) DisableUser(ctx context.Context, args *structpb.Struct) (*structpb.Struct, annotations.Annotations, error) {
 	l := ctxzap.Extract(ctx)
 	ann := annotations.New()
 

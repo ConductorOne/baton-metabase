@@ -17,35 +17,6 @@ func newTestConnector() (*Connector, *client.MockService) {
 	return conn, mockClient
 }
 
-func TestGetVersion(t *testing.T) {
-	ctx := context.Background()
-	_, mockClient := newTestConnector()
-
-	t.Run("should return version successfully", func(t *testing.T) {
-		mockClient.GetVersionFunc = func(ctx context.Context) (*client.VersionInfo, *v2.RateLimitDescription, error) {
-			return &client.VersionInfo{Tag: "v0.49.2"}, nil, nil
-		}
-
-		versionInfo, rateLimit, err := mockClient.GetVersion(ctx)
-		require.NoError(t, err)
-		require.NotNil(t, versionInfo)
-		require.Equal(t, "v0.49.2", versionInfo.Tag)
-		require.Nil(t, rateLimit)
-	})
-
-	t.Run("should return error if API fails", func(t *testing.T) {
-		mockClient.GetVersionFunc = func(ctx context.Context) (*client.VersionInfo, *v2.RateLimitDescription, error) {
-			return nil, nil, fmt.Errorf("API error")
-		}
-
-		versionInfo, rateLimit, err := mockClient.GetVersion(ctx)
-		require.Error(t, err)
-		require.Nil(t, versionInfo)
-		require.Nil(t, rateLimit)
-		require.Contains(t, err.Error(), "API error")
-	})
-}
-
 func TestEnableUserAction(t *testing.T) {
 	ctx := context.Background()
 	connector, mockClient := newTestConnector()
@@ -58,7 +29,7 @@ func TestEnableUserAction(t *testing.T) {
 		}
 
 		args, _ := structpb.NewStruct(map[string]interface{}{"userId": "1"})
-		resp, ann, err := connector.enableUser(ctx, args)
+		resp, ann, err := connector.EnableUser(ctx, args)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotNil(t, ann)
@@ -67,7 +38,7 @@ func TestEnableUserAction(t *testing.T) {
 	})
 
 	t.Run("error if missing userId", func(t *testing.T) {
-		_, _, err := connector.enableUser(ctx, &structpb.Struct{Fields: map[string]*structpb.Value{}})
+		_, _, err := connector.EnableUser(ctx, &structpb.Struct{Fields: map[string]*structpb.Value{}})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "missing required argument userId")
 	})
@@ -78,7 +49,7 @@ func TestEnableUserAction(t *testing.T) {
 		}
 
 		args, _ := structpb.NewStruct(map[string]interface{}{"userId": "1"})
-		_, ann, err := connector.enableUser(ctx, args)
+		_, ann, err := connector.EnableUser(ctx, args)
 		require.Error(t, err)
 		require.NotNil(t, ann)
 	})
@@ -96,7 +67,7 @@ func TestDisableUserAction(t *testing.T) {
 		}
 
 		args, _ := structpb.NewStruct(map[string]interface{}{"userId": "1"})
-		resp, ann, err := connector.disableUser(ctx, args)
+		resp, ann, err := connector.DisableUser(ctx, args)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotNil(t, ann)
@@ -105,7 +76,7 @@ func TestDisableUserAction(t *testing.T) {
 	})
 
 	t.Run("error if missing userId", func(t *testing.T) {
-		_, _, err := connector.disableUser(ctx, &structpb.Struct{Fields: map[string]*structpb.Value{}})
+		_, _, err := connector.DisableUser(ctx, &structpb.Struct{Fields: map[string]*structpb.Value{}})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "missing required argument userId")
 	})
@@ -116,7 +87,7 @@ func TestDisableUserAction(t *testing.T) {
 		}
 
 		args, _ := structpb.NewStruct(map[string]interface{}{"userId": "1"})
-		_, ann, err := connector.disableUser(ctx, args)
+		_, ann, err := connector.DisableUser(ctx, args)
 		require.Error(t, err)
 		require.NotNil(t, ann)
 	})

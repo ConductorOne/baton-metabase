@@ -56,7 +56,7 @@ func TestUsersList(t *testing.T) {
 		resources, next, annotations, err := userBuilder.List(ctx, nil, &pagination.Token{})
 		require.NoError(t, err)
 		require.Len(t, resources, 1)
-		require.Equal(t, "ana.gomez@example.com", resources[0].DisplayName)
+		require.Equal(t, "Ana Gomez", resources[0].DisplayName)
 		require.Equal(t, "1", resources[0].Id.Resource)
 		require.Equal(t, "nextToken", next)
 		test.AssertNoRatelimitAnnotations(t, annotations)

@@ -41,8 +41,11 @@ const (
 	// https://www.metabase.com/docs/latest/api#tag/apipermissions/post/api/permissions/membership
 	getMemberships = "/api/permissions/membership"
 
-	// https://www.metabase.com/docs/latest/api#tag/apisetting/get/api/setting/{key}
-	getVersion = "/api/setting/version"
+	// https://www.metabase.com/docs/latest/api#tag/apipermissions/post/api/permissions/membership
+	addUserToGroup = "/api/permissions/membership"
+
+	// https://www.metabase.com/docs/latest/api#tag/apipermissions/delete/api/permissions/membership/{id}
+	removeUserFromGroup = "/api/permissions/membership/%s"
 )
 
 type MetabaseClient struct {
@@ -101,7 +104,14 @@ func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.
 	}
 
 	var rateLimitData v2.RateLimitDescription
-	response, err := c.client.Do(request, uhttp.WithRatelimitData(&rateLimitData))
+	doOptions := []uhttp.DoOption{
+		uhttp.WithRatelimitData(&rateLimitData),
+	}
+	if target != nil {
+		doOptions = append(doOptions, uhttp.WithJSONResponse(target))
+	}
+
+	response, err := c.client.Do(request, doOptions...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("request failed: %w", err)
 	}
@@ -135,12 +145,6 @@ func (c *MetabaseClient) doRequest(ctx context.Context, method string, url *url.
 
 		return nil, &rateLimitData, fmt.Errorf("metabase API error: status %d %s: %s",
 			response.StatusCode, response.Status, bodyStr)
-	}
-
-	if target != nil {
-		if err := json.NewDecoder(response.Body).Decode(target); err != nil {
-			return nil, &rateLimitData, fmt.Errorf("failed to decode JSON response: %w", err)
-		}
 	}
 
 	return &response.Header, &rateLimitData, nil
@@ -225,17 +229,26 @@ func (c *MetabaseClient) ListMemberships(ctx context.Context) (map[string][]*Mem
 	return membershipResponse, rateLimitDesc, nil
 }
 
-func (c *MetabaseClient) GetVersion(ctx context.Context) (*VersionInfo, *v2.RateLimitDescription, error) {
-	var utilInfo VersionInfo
+func (c *MetabaseClient) AddUserToGroup(ctx context.Context, request *Membership) (*v2.RateLimitDescription, error) {
+	queryUrl := c.baseURL.JoinPath(addUserToGroup)
 
-	queryUrl := c.baseURL.JoinPath(getVersion)
-
-	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodGet, queryUrl, &utilInfo, nil)
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodPost, queryUrl, nil, request)
 	if err != nil {
-		return nil, rateLimitDesc, fmt.Errorf("failed to fetch Metabase version: %w", err)
+		return rateLimitDesc, fmt.Errorf("failed to add user %d to group %d: %w", request.UserID, request.GroupID, err)
 	}
 
-	return &utilInfo, rateLimitDesc, nil
+	return rateLimitDesc, nil
+}
+
+func (c *MetabaseClient) RemoveUserFromGroup(ctx context.Context, membershipID string) (*v2.RateLimitDescription, error) {
+	queryUrl := c.baseURL.JoinPath(fmt.Sprintf(removeUserFromGroup, membershipID))
+
+	_, rateLimitDesc, err := c.doRequest(ctx, http.MethodDelete, queryUrl, nil, nil)
+	if err != nil {
+		return rateLimitDesc, fmt.Errorf("failed to remove membership %s from group: %w", membershipID, err)
+	}
+
+	return rateLimitDesc, nil
 }
 
 func (c *MetabaseClient) IsPaidPlan() bool {

@@ -9,11 +9,12 @@ Check out [Baton](https://github.com/conductorone/baton) to learn more the proje
 ## Connector capabilities
 
 1. What resources does the connector sync?
-   The connector syncs users and groups from Metabase.
+   The connector syncs users (with last login) and groups from Metabase.
 
 2. Can the connector provision any resources? If so, which ones?
-    - The connector allows accounts to be created with password generation that must be stored in a vault.
+    - The connector allows accounts to be created with password generation that must be stored in a vault (Does not support account deletion).
     - The connector allows actions to be executed to enable and disable an account.
+    - The connector allows entitlements provisioning for groups.
 
 # Prerequisites
 For the connector to work properly, install the free open-source version of Metabase v0.49 or later, as it provides API key support.
