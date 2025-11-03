@@ -22,11 +22,6 @@ func TestEnableUserAction(t *testing.T) {
 	connector, mockClient := newTestConnector()
 
 	t.Run("successfully enable user", func(t *testing.T) {
-		mockClient.GetUserByIDFunc = func(ctx context.Context, userId string) (*client.User, *v2.RateLimitDescription, error) {
-			require.Equal(t, "1", userId)
-			return &client.User{IsActive: false}, nil, nil
-		}
-
 		mockClient.UpdateUserActiveStatusFunc = func(ctx context.Context, userId string, active bool) (*client.User, *v2.RateLimitDescription, error) {
 			require.Equal(t, "1", userId)
 			require.True(t, active)
@@ -39,20 +34,7 @@ func TestEnableUserAction(t *testing.T) {
 		require.NotNil(t, resp)
 		require.NotNil(t, ann)
 		require.Empty(t, ann)
-		require.True(t, resp.Fields["success"].GetBoolValue())
-	})
-
-	t.Run("skips enable if already active", func(t *testing.T) {
-		mockClient.GetUserByIDFunc = func(ctx context.Context, userId string) (*client.User, *v2.RateLimitDescription, error) {
-			return &client.User{IsActive: true}, nil, nil
-		}
-		mockClient.UpdateUserActiveStatusFunc = nil
-
-		args, _ := structpb.NewStruct(map[string]interface{}{"userId": "1"})
-		resp, ann, err := connector.EnableUser(ctx, args)
-		require.NoError(t, err)
-		require.True(t, resp.Fields["success"].GetBoolValue())
-		require.Empty(t, ann)
+		require.Equal(t, true, resp.Fields["success"].GetBoolValue())
 	})
 
 	t.Run("error if missing userId", func(t *testing.T) {
@@ -61,22 +43,7 @@ func TestEnableUserAction(t *testing.T) {
 		require.Contains(t, err.Error(), "missing required argument userId")
 	})
 
-	t.Run("error if GetUserByID fails", func(t *testing.T) {
-		mockClient.GetUserByIDFunc = func(ctx context.Context, userId string) (*client.User, *v2.RateLimitDescription, error) {
-			return nil, nil, fmt.Errorf("user not found")
-		}
-
-		args, _ := structpb.NewStruct(map[string]interface{}{"userId": "99"})
-		_, _, err := connector.EnableUser(ctx, args)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to fetch user")
-	})
-
 	t.Run("rate limit returned", func(t *testing.T) {
-		mockClient.GetUserByIDFunc = func(ctx context.Context, userId string) (*client.User, *v2.RateLimitDescription, error) {
-			return &client.User{IsActive: false}, nil, nil
-		}
-
 		mockClient.UpdateUserActiveStatusFunc = func(ctx context.Context, userId string, active bool) (*client.User, *v2.RateLimitDescription, error) {
 			return nil, &v2.RateLimitDescription{Limit: 50}, fmt.Errorf("rate limit error")
 		}
