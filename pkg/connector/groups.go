@@ -188,7 +188,8 @@ func (g *groupBuilder) parseIntoGroupResource(group *client.Group) (*v2.Resource
 		group.Name,
 		GroupResourceType,
 		group.ID,
-		[]resourceSdk.GroupTraitOption{resourceSdk.WithGroupProfile(profile)},
+		[]resourceSdk.GroupTraitOption{},
+		resourceSdk.WithResourceProfile(profile),
 	)
 }
 
