@@ -10,7 +10,6 @@ import (
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/cli"
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
-	"github.com/conductorone/baton-sdk/pkg/field"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 )
@@ -92,10 +91,6 @@ func (c *Connector) Validate(_ context.Context) (annotations.Annotations, error)
 // but not yet read here.
 func New(ctx context.Context, config *cfg.Metabase, _ *cli.ConnectorOpts) (connectorbuilder.ConnectorBuilderV2, []connectorbuilder.Opt, error) {
 	l := ctxzap.Extract(ctx)
-
-	if err := field.Validate(cfg.Configuration, config); err != nil {
-		return nil, nil, err
-	}
 
 	metabaseClient, err := client.New(ctx, config.MetabaseBaseUrl, config.MetabaseApiKey, config.MetabaseWithPaidPlan)
 	if err != nil {
