@@ -8,7 +8,9 @@ import (
 	cfg "github.com/conductorone/baton-metabase/pkg/config"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
+	"github.com/conductorone/baton-sdk/pkg/cli"
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
+	"github.com/conductorone/baton-sdk/pkg/field"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 )
@@ -17,9 +19,9 @@ type Connector struct {
 	client client.ClientService
 }
 
-// ResourceSyncers returns a ResourceSyncer for each resource type that should be synced from the upstream service.
-func (c *Connector) ResourceSyncers(_ context.Context) []connectorbuilder.ResourceSyncer {
-	return []connectorbuilder.ResourceSyncer{
+// ResourceSyncers returns a ResourceSyncerV2 for each resource type that should be synced from the upstream service.
+func (c *Connector) ResourceSyncers(_ context.Context) []connectorbuilder.ResourceSyncerV2 {
+	return []connectorbuilder.ResourceSyncerV2{
 		newUserBuilder(c.client),
 		newGroupBuilder(c.client),
 	}
@@ -84,16 +86,24 @@ func (c *Connector) Validate(_ context.Context) (annotations.Annotations, error)
 }
 
 // New returns a new instance of the connector.
-func New(ctx context.Context, config *cfg.Metabase) (*Connector, error) {
+//
+// The *cli.ConnectorOpts parameter is part of the V2 entrypoint contract; it
+// carries runtime options such as the sync resource-type filter. It is accepted
+// but not yet read here.
+func New(ctx context.Context, config *cfg.Metabase, _ *cli.ConnectorOpts) (connectorbuilder.ConnectorBuilderV2, []connectorbuilder.Opt, error) {
 	l := ctxzap.Extract(ctx)
+
+	if err := field.Validate(cfg.Configuration, config); err != nil {
+		return nil, nil, err
+	}
 
 	metabaseClient, err := client.New(ctx, config.MetabaseBaseUrl, config.MetabaseApiKey, config.MetabaseWithPaidPlan)
 	if err != nil {
 		l.Error("error creating metabase client", zap.Error(err))
-		return nil, err
+		return nil, nil, err
 	}
 
 	return &Connector{
 		client: metabaseClient,
-	}, nil
+	}, nil, nil
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/conductorone/baton-metabase/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
-	"github.com/conductorone/baton-sdk/pkg/pagination"
+	resourceSdk "github.com/conductorone/baton-sdk/pkg/types/resource"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +28,8 @@ func TestGroupsList(t *testing.T) {
 			return nil, rateLimit, fmt.Errorf("ratelimit error groups")
 		}
 
-		_, _, ann, err := groupBuilder.List(ctx, nil, &pagination.Token{})
+		_, syncResults, err := groupBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
+		ann := syncResults.Annotations
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to list groups: ratelimit error groups")
 		require.NotNil(t, ann)
@@ -43,7 +44,8 @@ func TestGroupsList(t *testing.T) {
 			}, nil, nil
 		}
 
-		resources, nextPageToken, _, err := groupBuilder.List(ctx, nil, &pagination.Token{})
+		resources, syncResults, err := groupBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
+		nextPageToken := syncResults.NextPageToken
 		require.NoError(t, err)
 		require.Len(t, resources, 2)
 		require.Equal(t, "All Users", resources[0].DisplayName)
@@ -57,7 +59,8 @@ func TestGroupsList(t *testing.T) {
 			return []*client.Group{}, nil, nil
 		}
 
-		resources, nextPageToken, _, err := groupBuilder.List(ctx, nil, &pagination.Token{})
+		resources, syncResults, err := groupBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
+		nextPageToken := syncResults.NextPageToken
 		require.NoError(t, err)
 		require.Empty(t, resources)
 		require.Empty(t, nextPageToken)
@@ -69,7 +72,7 @@ func TestGroupsList(t *testing.T) {
 			return nil, nil, fmt.Errorf("API error")
 		}
 
-		_, _, _, err := groupBuilder.List(ctx, nil, &pagination.Token{})
+		_, _, err := groupBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to list groups: API error")
 	})
@@ -86,7 +89,7 @@ func TestGroupsEntitlements(t *testing.T) {
 		groupBuilder, mockClient := newTestGroupBuilder()
 		mockClient.IsPaidPlanFunc = func() bool { return true }
 
-		entitlements, _, _, err := groupBuilder.Entitlements(ctx, groupResource, &pagination.Token{})
+		entitlements, _, err := groupBuilder.Entitlements(ctx, groupResource, resourceSdk.SyncOpAttrs{})
 		require.NoError(t, err)
 		require.Len(t, entitlements, 2)
 
@@ -103,7 +106,7 @@ func TestGroupsEntitlements(t *testing.T) {
 		groupBuilder, mockClient := newTestGroupBuilder()
 		mockClient.IsPaidPlanFunc = func() bool { return false }
 
-		entitlements, _, _, err := groupBuilder.Entitlements(ctx, groupResource, &pagination.Token{})
+		entitlements, _, err := groupBuilder.Entitlements(ctx, groupResource, resourceSdk.SyncOpAttrs{})
 		require.NoError(t, err)
 		require.Len(t, entitlements, 1)
 
