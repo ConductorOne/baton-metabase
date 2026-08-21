@@ -190,7 +190,10 @@ func (u *userBuilder) parseIntoUserResource(user *client.User) (*v2.Resource, er
 	traitOptions := []resourceSdk.UserTraitOption{
 		resourceSdk.WithEmail(user.Email, true),
 		resourceSdk.WithUserLogin(user.Email),
-		resourceSdk.WithUserProfile(profile),
+	}
+
+	resourceOptions := []resourceSdk.ResourceOption{
+		resourceSdk.WithResourceProfile(profile),
 	}
 
 	if user.LastLogin != nil {
@@ -198,9 +201,9 @@ func (u *userBuilder) parseIntoUserResource(user *client.User) (*v2.Resource, er
 	}
 
 	if user.IsActive {
-		traitOptions = append(traitOptions, resourceSdk.WithStatus(v2.UserTrait_Status_STATUS_ENABLED))
+		resourceOptions = append(resourceOptions, resourceSdk.WithResourceStatus(v2.Status_RESOURCE_STATUS_ENABLED, ""))
 	} else {
-		traitOptions = append(traitOptions, resourceSdk.WithStatus(v2.UserTrait_Status_STATUS_DISABLED))
+		resourceOptions = append(resourceOptions, resourceSdk.WithResourceStatus(v2.Status_RESOURCE_STATUS_DISABLED, ""))
 	}
 
 	return resourceSdk.NewUserResource(
@@ -208,6 +211,7 @@ func (u *userBuilder) parseIntoUserResource(user *client.User) (*v2.Resource, er
 		UserResourceType,
 		user.ID,
 		traitOptions,
+		resourceOptions...,
 	)
 }
 
