@@ -9,8 +9,8 @@ import (
 
 	"github.com/conductorone/baton-metabase/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
-	"github.com/conductorone/baton-sdk/pkg/pagination"
 	"github.com/conductorone/baton-sdk/pkg/test"
+	resourceSdk "github.com/conductorone/baton-sdk/pkg/types/resource"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -34,7 +34,8 @@ func TestUsersList(t *testing.T) {
 			return nil, "", rl, fmt.Errorf("ratelimit error")
 		}
 
-		resources, token, annotations, err := userBuilder.List(ctx, nil, &pagination.Token{})
+		resources, syncResults, err := userBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
+		token, annotations := syncResults.NextPageToken, syncResults.Annotations
 		require.Nil(t, resources)
 		require.Empty(t, token)
 		require.Error(t, err)
@@ -53,7 +54,8 @@ func TestUsersList(t *testing.T) {
 			return []*client.User{mockUser1}, "nextToken", nil, nil
 		}
 
-		resources, next, annotations, err := userBuilder.List(ctx, nil, &pagination.Token{})
+		resources, syncResults, err := userBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
+		next, annotations := syncResults.NextPageToken, syncResults.Annotations
 		require.NoError(t, err)
 		require.Len(t, resources, 1)
 		require.Equal(t, "Ana Gomez", resources[0].DisplayName)
@@ -68,7 +70,8 @@ func TestUsersList(t *testing.T) {
 			return nil, "", nil, nil
 		}
 
-		resources, token, annotations, err := userBuilder.List(ctx, nil, &pagination.Token{})
+		resources, syncResults, err := userBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
+		token, annotations := syncResults.NextPageToken, syncResults.Annotations
 		require.NoError(t, err)
 		require.Empty(t, resources)
 		require.Empty(t, token)
@@ -81,7 +84,7 @@ func TestUsersList(t *testing.T) {
 			return nil, "", nil, fmt.Errorf("API error")
 		}
 
-		_, _, _, err := userBuilder.List(ctx, nil, &pagination.Token{})
+		_, _, err := userBuilder.List(ctx, nil, resourceSdk.SyncOpAttrs{})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to list users")
 	})
@@ -100,7 +103,8 @@ func TestUsersGrants(t *testing.T) {
 			return nil, &v2.RateLimitDescription{Limit: 100}, fmt.Errorf("ratelimit error memberships")
 		}
 
-		_, _, ann, err := userBuilder.Grants(ctx, userResource, &pagination.Token{})
+		_, syncResults, err := userBuilder.Grants(ctx, userResource, resourceSdk.SyncOpAttrs{})
+		ann := syncResults.Annotations
 
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to list memberships: ratelimit error memberships")
@@ -118,7 +122,8 @@ func TestUsersGrants(t *testing.T) {
 			}, nil, nil
 		}
 
-		grants, _, annotations, err := userBuilder.Grants(ctx, userResource, &pagination.Token{})
+		grants, syncResults, err := userBuilder.Grants(ctx, userResource, resourceSdk.SyncOpAttrs{})
+		annotations := syncResults.Annotations
 		require.NoError(t, err)
 		require.Len(t, grants, 2)
 		test.AssertNoRatelimitAnnotations(t, annotations)
@@ -142,7 +147,7 @@ func TestUsersGrants(t *testing.T) {
 			return nil, nil, fmt.Errorf("API error")
 		}
 
-		_, _, _, err := userBuilder.Grants(ctx, userResource, &pagination.Token{})
+		_, _, err := userBuilder.Grants(ctx, userResource, resourceSdk.SyncOpAttrs{})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to list memberships")
 	})

@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	config.Generate("metabase", cfg.Config)
+	config.Generate("metabase", cfg.Configuration)
 }
