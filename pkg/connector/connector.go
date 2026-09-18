@@ -25,10 +25,6 @@ func (c *Connector) ResourceSyncers(_ context.Context) []connectorbuilder.Resour
 	}
 }
 
-func (c *Connector) Actions(ctx context.Context) (connectorbuilder.CustomActionManager, error) {
-	return c.RegisterActionManager(ctx)
-}
-
 // Asset takes an input AssetRef and attempts to fetch it using the connector's authenticated http client
 // It streams a response, always starting with a metadata object, following by chunked payloads for the asset.
 func (c *Connector) Asset(_ context.Context, _ *v2.AssetRef) (string, io.ReadCloser, error) {

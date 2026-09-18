@@ -11,7 +11,6 @@ import (
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/actions"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
-	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -66,20 +65,16 @@ var DisableUserAction = &v2.BatonActionSchema{
 	},
 }
 
-func (c *Connector) RegisterActionManager(ctx context.Context) (connectorbuilder.CustomActionManager, error) {
-	actionManager := actions.NewActionManager(ctx)
-
-	err := actionManager.RegisterAction(ctx, EnableUserAction.Name, EnableUserAction, c.EnableUser)
-	if err != nil {
-		return nil, err
+// GlobalActions registers the connector's global actions with the SDK's action
+// manager. It implements connectorbuilder.GlobalActionProvider, which replaces
+// the deprecated RegisterActionManager/CustomActionManager pair; Register takes
+// the action name from the schema, so the name argument is no longer passed.
+func (c *Connector) GlobalActions(ctx context.Context, registry actions.ActionRegistry) error {
+	if err := registry.Register(ctx, EnableUserAction, c.EnableUser); err != nil {
+		return err
 	}
 
-	err = actionManager.RegisterAction(ctx, DisableUserAction.Name, DisableUserAction, c.DisableUser)
-	if err != nil {
-		return nil, err
-	}
-
-	return actionManager, nil
+	return registry.Register(ctx, DisableUserAction, c.DisableUser)
 }
 
 func (c *Connector) EnableUser(ctx context.Context, args *structpb.Struct) (*structpb.Struct, annotations.Annotations, error) {
